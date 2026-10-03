@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        HackerRank Progress Tracker
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <div class="container">
+
+
+        <h1>
+            HackerRank Progress Tracker
+        </h1>
+
+
+        <p class="description">
+            Upload an Excel file containing
+            student names and HackerRank links.
+        </p>
+
+
+        <!-- Upload Card -->
+
+        <div class="card">
+
+
+            <h2>
+                Upload Student Excel
+            </h2>
+
+
+            <p>
+                Required columns:
+            </p>
+
+
+            <div class="columns">
+
+                <span>
+                    Student name
+                </span>
+
+                <span>
+                    Hacker Rank Link
+                </span>
+
+            </div>
+
+
+            <input
+                type="file"
+                id="excelFile"
+                accept=".xlsx,.xls"
+            >
+
+
+            <button
+                id="checkButton"
+            >
+                Check HackerRank
+            </button>
+
+
+            <button
+                id="resetButton"
+                class="reset"
+            >
+                Reset
+            </button>
+
+
+            <p
+                id="fileName"
+                class="file-name"
+            ></p>
+
+
+            <div
+                id="message"
+                class="message"
+            ></div>
+
+
+        </div>
+
+
+        <!-- Loading -->
+
+        <div
+            id="loading"
+            class="loading hidden"
+        >
+
+            <div class="spinner"></div>
+
+            <h3>
+                Processing students...
+            </h3>
+
+            <p>
+                Please wait while HackerRank
+                profiles are being checked.
+            </p>
+
+        </div>
+
+
+        <!-- Results -->
+
+        <div
+            id="resultsSection"
+            class="results hidden"
+        >
+
+            <h2>
+                HackerRank Results
+            </h2>
+
+
+            <p id="totalStudents"></p>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                #
+                            </th>
+
+                            <th>
+                                Student Name
+                            </th>
+
+                            <th>
+                                HackerRank Username
+                            </th>
+
+                            <th>
+                                C Stars
+                            </th>
+
+                            <th>
+                                C Problems Solved
+                            </th>
+
+                            <th>
+                                Total C Challenges
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody
+                        id="resultsBody"
+                    >
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <script
+        src="script.js"
+    ></script>
+
+</body>
+
+</html>
