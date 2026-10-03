@@ -1,220 +1,75 @@
-const { chromium } = require("playwright");
-
-let browser;
-let context;
-let page;
-
-
-// =======================================
-// Start Browser
-// =======================================
-
-async function startBrowser() {
-
-    if (browser) {
-        return;
-    }
-
-    browser = await chromium.launch({
-
-        // Keep false while developing
-        // Change to true when deploying
-        //headless: false,
-        //slowMo: 100
-        headless: true,
-    });
-
-    context = await browser.newContext();
-
-    page = await context.newPage();
-
-    console.log("Browser started.");
-
-}
-
-
-// =======================================
-// Get HackerRank Progress
-// =======================================
-
 async function getHackerRankProgress(profileUrl) {
-
-    await startBrowser();
-
     try {
-
         console.log("\n=================================");
         console.log("Opening:", profileUrl);
         console.log("=================================");
 
-
-        // =======================================
-        // Validate Profile URL
-        // =======================================
-
-        if (
-            !profileUrl.includes(
-                "hackerrank.com/profile/"
-            )
-        ) {
-
+        // Validate HackerRank profile URL
+        if (!profileUrl.includes("hackerrank.com/profile/")) {
             return {
-
                 profileUrl,
-
                 success: false,
-
-                error:
-                    "Invalid HackerRank profile URL"
-
+                error: "Invalid HackerRank profile URL"
             };
-
         }
 
-
-        // =======================================
-        // Extract Username
-        // =======================================
-
+        // Extract username
         const usernameMatch =
-            profileUrl.match(
-                /\/profile\/([^/?#]+)/
-            );
-
+            profileUrl.match(/\/profile\/([^/?#]+)/);
 
         const username =
             usernameMatch
                 ? usernameMatch[1]
                 : "";
 
+        if (!username) {
+            return {
+                profileUrl,
+                success: false,
+                error: "Could not extract HackerRank username"
+            };
+        }
 
-        // =======================================
-        // WAIT FOR HACKERRANK BADGE API
-        // =======================================
+        // HackerRank badge API
+        const badgeApiUrl =
+            `https://www.hackerrank.com/rest/hackers/${username}/badges`;
 
-        /*
-            IMPORTANT:
+        console.log("Calling badge API:");
+        console.log(badgeApiUrl);
 
-            We start waiting for the API
-            BEFORE opening the page.
-
-            This prevents us from missing
-            the API response.
-        */
-
-        const responsePromise =
-            page.waitForResponse(
-
-                response => {
-
-                    const url =
-                        response.url();
-
-                    return (
-
-                        url.includes(
-                            "/rest/hackers/"
-                        )
-
-                        &&
-
-                        url.includes(
-                            "/badges"
-                        )
-
-                        &&
-
-                        response.status() === 200
-
-                    );
-
-                },
-
-                {
-                    timeout: 15000
-                }
-
-            ).catch(() => null);
-
-
-        // =======================================
-        // Open HackerRank Profile
-        // =======================================
-
-        await page.goto(
-            profileUrl,
+        const response = await fetch(
+            badgeApiUrl,
             {
-
-                waitUntil:
-                    "domcontentloaded",
-
-                timeout:
-                    30000
-
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0",
+                    "Accept":
+                        "application/json"
+                }
             }
         );
 
+        console.log(
+            "Badge API status:",
+            response.status
+        );
 
-        // =======================================
-        // Get Badge API Response
-        // =======================================
-
-        const badgeResponse =
-            await responsePromise;
-
-
-        // =======================================
-        // Read API JSON
-        // =======================================
-
-        let badgeData = null;
-
-
-        if (badgeResponse) {
-
-            try {
-
-                badgeData =
-                    await badgeResponse.json();
-
-                console.log(
-                    "Badge API received."
-                );
-
-            } catch (error) {
-
-                console.log(
-                    "Could not read badge API response."
-                );
-
-            }
-
-        } else {
-
-            console.log(
-                "Badge API response not received."
-            );
-
+        if (!response.ok) {
+            return {
+                profileUrl,
+                username,
+                success: false,
+                error:
+                    `Badge API returned status ${response.status}`
+            };
         }
 
-
-        // =======================================
-        // Give HackerRank additional time
-        // =======================================
-
-        await page.waitForTimeout(3000);
-
-
-        // =======================================
-        // Extract C Data
-        // =======================================
+        const badgeData =
+            await response.json();
 
         let cStars = 0;
-
         let problemsSolved = 0;
-
         let totalChallenges = 0;
-
 
         if (
             badgeData &&
@@ -222,46 +77,23 @@ async function getHackerRankProgress(profileUrl) {
                 badgeData.models
             )
         ) {
-
             const cBadge =
                 badgeData.models.find(
-
                     badge =>
                         badge.badge_type === "c"
-
                 );
 
-
             if (cBadge) {
-
                 cStars =
-                    cBadge.stars || 0;
+                    cBadge.stars ?? 0;
 
                 problemsSolved =
-                    cBadge.solved || 0;
+                    cBadge.solved ?? 0;
 
                 totalChallenges =
-                    cBadge.total_challenges || 0;
-
+                    cBadge.total_challenges ?? 0;
             }
-
         }
-
-
-        // =======================================
-        // Page Information
-        // =======================================
-
-        const title =
-            await page.title();
-
-        const currentUrl =
-            page.url();
-
-
-        // =======================================
-        // Display Result
-        // =======================================
 
         console.log(
             "\n------------------------------"
@@ -291,31 +123,14 @@ async function getHackerRankProgress(profileUrl) {
             "------------------------------"
         );
 
-
-        // =======================================
-        // Return Result
-        // =======================================
-
         return {
-
             profileUrl,
-
             username,
-
-            title,
-
-            currentUrl,
-
             cStars,
-
             problemsSolved,
-
             totalChallenges,
-
             success: true
-
         };
-
 
     } catch (error) {
 
@@ -324,25 +139,191 @@ async function getHackerRankProgress(profileUrl) {
             error.message
         );
 
-
         return {
-
             profileUrl,
-
             success: false,
-
             error:
                 error.message
-
         };
-
     }
-
 }
 
-
 module.exports = {
-
     getHackerRankProgress
-
 };
+// const { chromium } = require("playwright");
+
+// let browser;
+// let context;
+// let page;
+
+// async function startBrowser() {
+//     if (browser) {
+//         return;
+//     }
+
+//     browser = await chromium.launch({
+//         headless: true
+//     });
+
+//     context = await browser.newContext();
+
+//     page = await context.newPage();
+
+//     console.log("Browser started.");
+// }
+
+// async function getHackerRankProgress(profileUrl) {
+//     try {
+//         console.log("\n=================================");
+//         console.log("Opening:", profileUrl);
+//         console.log("=================================");
+
+//         if (!profileUrl.includes("hackerrank.com/profile/")) {
+//             return {
+//                 profileUrl,
+//                 success: false,
+//                 error: "Invalid HackerRank profile URL"
+//             };
+//         }
+
+//         const usernameMatch =
+//             profileUrl.match(/\/profile\/([^/?#]+)/);
+
+//         const username =
+//             usernameMatch
+//                 ? usernameMatch[1]
+//                 : "";
+
+//         if (!username) {
+//             return {
+//                 profileUrl,
+//                 success: false,
+//                 error: "Could not extract HackerRank username"
+//             };
+//         }
+
+//         /*
+//          * Directly request HackerRank badge API
+//          */
+//         const badgeApiUrl =
+//             `https://www.hackerrank.com/rest/hackers/${username}/badges`;
+
+//         console.log("Calling badge API:");
+//         console.log(badgeApiUrl);
+
+//         const response = await fetch(
+//             badgeApiUrl,
+//             {
+//                 headers: {
+//                     "User-Agent":
+//                         "Mozilla/5.0",
+//                     "Accept":
+//                         "application/json"
+//                 }
+//             }
+//         );
+
+//         console.log(
+//             "Badge API status:",
+//             response.status
+//         );
+
+//         if (!response.ok) {
+//             return {
+//                 profileUrl,
+//                 username,
+//                 success: false,
+//                 error:
+//                     `Badge API returned status ${response.status}`
+//             };
+//         }
+
+//         const badgeData =
+//             await response.json();
+
+//         let cStars = 0;
+//         let problemsSolved = 0;
+//         let totalChallenges = 0;
+
+//         if (
+//             badgeData &&
+//             Array.isArray(
+//                 badgeData.models
+//             )
+//         ) {
+//             const cBadge =
+//                 badgeData.models.find(
+//                     badge =>
+//                         badge.badge_type === "c"
+//                 );
+
+//             if (cBadge) {
+//                 cStars =
+//                     cBadge.stars ?? 0;
+
+//                 problemsSolved =
+//                     cBadge.solved ?? 0;
+
+//                 totalChallenges =
+//                     cBadge.total_challenges ?? 0;
+//             }
+//         }
+
+//         console.log(
+//             "\n------------------------------"
+//         );
+
+//         console.log(
+//             "Username:",
+//             username
+//         );
+
+//         console.log(
+//             "C Stars:",
+//             cStars
+//         );
+
+//         console.log(
+//             "C Problems Solved:",
+//             problemsSolved
+//         );
+
+//         console.log(
+//             "Total C Challenges:",
+//             totalChallenges
+//         );
+
+//         console.log(
+//             "------------------------------"
+//         );
+
+//         return {
+//             profileUrl,
+//             username,
+//             cStars,
+//             problemsSolved,
+//             totalChallenges,
+//             success: true
+//         };
+
+//     } catch (error) {
+
+//         console.error(
+//             "Profile error:",
+//             error.message
+//         );
+
+//         return {
+//             profileUrl,
+//             success: false,
+//             error:
+//                 error.message
+//         };
+//     }
+// }
+
+// module.exports = {
+//     getHackerRankProgress
+// };
+

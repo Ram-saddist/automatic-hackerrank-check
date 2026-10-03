@@ -4,24 +4,16 @@ const {
     getHackerRankProgress
 } = require("./scraper");
 
-
 async function processExcel(filePath) {
-
-    // =======================================
-    // Read Excel
-    // =======================================
 
     const workbook =
         XLSX.readFile(filePath);
 
-
     const sheetName =
         workbook.SheetNames[0];
 
-
     const worksheet =
         workbook.Sheets[sheetName];
-
 
     const students =
         XLSX.utils.sheet_to_json(
@@ -31,32 +23,18 @@ async function processExcel(filePath) {
             }
         );
 
-
     console.log(
         `Found ${students.length} students`
     );
 
-
-    // =======================================
-    // Check Excel
-    // =======================================
-
     if (students.length === 0) {
-
         throw new Error(
             "Excel file is empty"
         );
-
     }
-
-
-    // =======================================
-    // Check Columns
-    // =======================================
 
     const firstRow =
         students[0];
-
 
     if (
         !Object.prototype.hasOwnProperty.call(
@@ -64,13 +42,10 @@ async function processExcel(filePath) {
             "Student name"
         )
     ) {
-
         throw new Error(
             'Excel column "Student name" not found'
         );
-
     }
-
 
     if (
         !Object.prototype.hasOwnProperty.call(
@@ -78,20 +53,12 @@ async function processExcel(filePath) {
             "Hacker Rank Link"
         )
     ) {
-
         throw new Error(
             'Excel column "Hacker Rank Link" not found'
         );
-
     }
 
-
-    // =======================================
-    // Process Students
-    // =======================================
-
     const results = [];
-
 
     for (
         let i = 0;
@@ -102,34 +69,26 @@ async function processExcel(filePath) {
         const student =
             students[i];
 
-
         const studentName =
             String(
                 student["Student name"]
             ).trim();
-
 
         const profileUrl =
             String(
                 student["Hacker Rank Link"]
             ).trim();
 
-
         console.log(
             `\nProcessing ${i + 1}/${students.length}`
         );
-
 
         console.log(
             "Student:",
             studentName
         );
 
-
-        // =======================================
-        // Invalid URL
-        // =======================================
-
+        // Validate URL
         if (
             !profileUrl ||
             !profileUrl.includes(
@@ -138,49 +97,27 @@ async function processExcel(filePath) {
         ) {
 
             results.push({
-
                 studentName,
-
                 profileUrl,
-
                 username: "",
-
                 cStars: "",
-
                 problemsSolved: "",
-
                 totalChallenges: "",
-
                 status: "Invalid URL",
-
                 error:
                     "HackerRank profile URL required"
-
             });
 
             continue;
-
         }
-
-
-        // =======================================
-        // Scrape HackerRank
-        // =======================================
 
         const data =
             await getHackerRankProgress(
                 profileUrl
             );
 
-
-        // =======================================
-        // Save Result
-        // =======================================
-
         results.push({
-
             studentName,
-
             profileUrl,
 
             username:
@@ -202,24 +139,16 @@ async function processExcel(filePath) {
 
             error:
                 data.error || ""
-
         });
-
 
         console.log(
             `Completed ${i + 1}/${students.length}`
         );
-
     }
 
-
     return results;
-
 }
 
-
 module.exports = {
-
     processExcel
-
 };

@@ -3,26 +3,16 @@ const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const PORT = process.env.PORT || 5000;
-
 
 const {
     processExcel
 } = require("./excelProcessor");
 
-
 const app = express();
-
-
-// =======================================
-// Middleware
-// =======================================
 
 app.use(cors());
 
-app.use(
-    express.json()
-);
+app.use(express.json());
 
 
 // =======================================
@@ -40,7 +30,7 @@ app.use(
 
 
 // =======================================
-// Upload Configuration
+// File Upload
 // =======================================
 
 const upload =
@@ -50,51 +40,39 @@ const upload =
 
 
 // =======================================
-// Home API
+// API Test
 // =======================================
 
 app.get("/api", (req, res) => {
 
     res.json({
-
         message:
             "HackerRank Progress Tracker API is running"
-
     });
 
 });
 
 
 // =======================================
-// Excel Upload
+// Excel Processing
 // =======================================
 
 app.post(
     "/api/check-excel",
-
     upload.single("file"),
-
     async (req, res) => {
 
         try {
 
-            // -------------------------------
-            // Check file
-            // -------------------------------
-
             if (!req.file) {
 
                 return res.status(400).json({
-
                     success: false,
-
                     message:
                         "Excel file is required"
-
                 });
 
             }
-
 
             console.log(
                 "\nExcel received:"
@@ -105,29 +83,19 @@ app.post(
             );
 
 
-            // -------------------------------
-            // Process Excel
-            // -------------------------------
-
             const results =
                 await processExcel(
                     req.file.path
                 );
 
 
-            // -------------------------------
-            // Delete temporary Excel
-            // -------------------------------
+            // Delete temporary Excel file
 
             fs.unlink(
                 req.file.path,
                 () => {}
             );
 
-
-            // -------------------------------
-            // Send response
-            // -------------------------------
 
             res.json({
 
@@ -140,7 +108,6 @@ app.post(
 
             });
 
-
         } catch (error) {
 
             console.error(
@@ -148,6 +115,9 @@ app.post(
                 error
             );
 
+
+            // Delete temporary file
+            // if processing failed
 
             if (
                 req.file &&
@@ -184,6 +154,17 @@ app.post(
 // Start Server
 // =======================================
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const PORT =
+    process.env.PORT || 5000;
+
+app.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
+
+        console.log(
+            `Server running on port ${PORT}`
+        );
+
+    }
+);
